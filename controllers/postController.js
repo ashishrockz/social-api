@@ -1,14 +1,33 @@
-const Post = require('../model/posts');
+const Post = require('../model/Posts');
+const multer = require('multer');
+const path = require('path');
 
-exports.createPost = async (req, res) => {
-  const { content, imageUrl } = req.body;
-  try {
-    const newPost = await Post.create({ user: req.userId, content, imageUrl });
-    res.status(201).json(newPost);
-  } catch (error) {
-    res.status(400).json({ error: 'Error creating post' });
+// File upload configuration (multer)
+const storage = multer.diskStorage({
+  destination: './uploads',
+  filename: (req, file, cb) => {
+    cb(null, `${Date.now()}-${file.originalname}`);
   }
-};
+});
+
+const upload = multer({ storage });
+
+// Create a new post
+exports.createPost = [
+  upload.single('image'),
+  async (req, res) => {
+    const { content, caption } = req.body;
+    const user = req.userId;
+    const imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
+
+    try {
+      const post = await Post.create({ user, content, caption, imageUrl });
+      res.status(201).json(post);
+    } catch (error) {
+      res.status(400).json({ error: 'Error creating post', details: error.message });
+    }
+  }
+];
 exports.getPosts = async (req, res) => {
     try {
       const posts = await Post.find().populate('user', 'username').sort({ createdAt: -1 });
@@ -17,27 +36,12 @@ exports.getPosts = async (req, res) => {
       res.status(500).json({ error: 'Error fetching posts' });
     }
   };
-<<<<<<< HEAD
-  const multer = require('multer');
-const upload = multer({ dest: 'uploads/' }); // or configure storage as needed
-
-// Adjust your createPost function
-exports.createPost = async (req, res) => {
-  const { content } = req.body;
-  const imageUrl = req.file ? req.file.path : null; // Adjust according to your file handling logic
-
+// Get posts by user
+exports.getUserPosts = async (req, res) => {
   try {
-    const newPost = await Post.create({ 
-      user: req.userId, 
-      content, 
-      imageUrl 
-    });
-    res.status(201).json(newPost);
+    const posts = await Post.find({ user: req.userId }).sort({ createdAt: -1 });
+    res.json(posts);
   } catch (error) {
-    console.error('Error creating post:', error);
-    res.status(400).json({ error: 'Error creating post', details: error.message });
+    res.status(500).json({ error: 'Failed to fetch posts' });
   }
 };
-=======
-  
->>>>>>> parent of 261d83e (start)
