@@ -25,8 +25,10 @@ app.use(bodyParser.json());
 app.use('/auth', authentication);
 
 // Post routes
-app.post('/posts', verifyToken, createPost);
-app.get('/posts', verifyToken, getPosts);
+const { createPost, getPosts } = require('../controllers/postController');
+
+app.post('/posts', upload.single('file'), createPost); // Adding file upload middleware
+app.get('/posts', getPosts);
 
 // Comment route
 app.post('/comments', verifyToken, addComment);
