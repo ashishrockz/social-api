@@ -16,11 +16,9 @@ const verifyToken = (req, res, next) => {
       return res.status(403).json({ message: 'Failed to authenticate token' });
     }
     req.userId = decoded.id;
-    console.log('Decoded User ID:', req.userId); // Confirm user ID is set
+    req.userRole = decoded.role;
     next();
   });
 };
-
-
 
 module.exports = verifyToken;

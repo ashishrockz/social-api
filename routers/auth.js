@@ -13,7 +13,7 @@ const verifyToken = (req, res, next) => {
 
   if (!token) {
     console.log('No token provided');
-    return res.status(403).json({ message: 'Please Login' });
+    return res.status(403).json({ message: 'Please login' });
   }
 
   jwt.verify(token, secretKey, (err, decoded) => {
@@ -22,12 +22,10 @@ const verifyToken = (req, res, next) => {
       return res.status(403).json({ message: 'Failed to authenticate token' });
     }
     req.userId = decoded.id;
-    console.log('Decoded User ID:', req.userId); // Confirm user ID is set
+    req.userRole = decoded.role;
     next();
   });
 };
-
-
 
 // Login route
 router.post('/login', async (req, res) => {
