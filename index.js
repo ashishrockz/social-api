@@ -12,7 +12,6 @@ const verifyToken = require('./middleware/auth');
 const multer = require('multer');
 const upload = multer({ dest: 'uploads/' });
 
-router.post('/posts', upload.single('file'), createPost);
 
 // Database connection
 connection();
@@ -29,8 +28,8 @@ app.use(bodyParser.json());
 app.use('/auth', authentication);
 
 // Post routes
-router.post('/posts', upload.single('file'), createPost);
-router.get('/posts',verifyToken, getPosts);
+app.post('/posts', upload.single('file'), createPost);
+app.get('/posts',verifyToken, getPosts);
 
 // Comment route
 app.post('/comments', verifyToken, addComment);
