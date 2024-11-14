@@ -9,9 +9,6 @@ const { createPost, getPosts } = require('./controllers/postController');
 const { addComment } = require('./controllers/commentController');
 const { toggleLike } = require('./controllers/likeController');
 const verifyToken = require('./middleware/auth');
-const multer = require('multer');
-const upload = multer({ dest: 'uploads/' });
-
 
 // Database connection
 connection();
@@ -28,8 +25,8 @@ app.use(bodyParser.json());
 app.use('/auth', authentication);
 
 // Post routes
-app.post('/posts', upload.single('file'), createPost);
-app.get('/posts',verifyToken, getPosts);
+app.post('/posts', verifyToken, createPost);
+app.get('/posts', verifyToken, getPosts);
 
 // Comment route
 app.post('/comments', verifyToken, addComment);

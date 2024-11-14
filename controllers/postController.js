@@ -8,9 +8,7 @@ exports.getPosts = async (req, res) => {
     }
   };
   exports.createPost = async (req, res) => {
-    const { content } = req.body;
-    const imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
-  
+    const { content, imageUrl } = req.body;
     console.log('User ID in createPost:', req.userId); // Debugging log
     try {
       const newPost = await Post.create({ user: req.userId, content, imageUrl });
@@ -20,4 +18,5 @@ exports.getPosts = async (req, res) => {
       res.status(400).json({ error: 'Error creating post', details: error.message });
     }
   };
+  
   
