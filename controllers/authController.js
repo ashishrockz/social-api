@@ -1,7 +1,8 @@
+// routes/auth.js
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
-const EmployeeModel = require('../model/User'); // Ensure this path is correct
+const UserModel = require('../model/users'); // Use the correct model name
 const router = express.Router();
 const secretKey = process.env.JWT_SECRET || 'your-secret-key';
 
@@ -10,11 +11,18 @@ const verifyToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
 
-  if (!token) return res.status(403).json({ message: 'Token required' });
+  if (!token) {
+    console.log('No token provided');
+    return res.status(403).json({ message: 'Please login' });
+  }
 
-  jwt.verify(token, secretKey, (err, decoded) => { // Use correct variable: secretKey
-    if (err) return res.status(403).json({ message: 'Invalid token' });
+  jwt.verify(token, secretKey, (err, decoded) => {
+    if (err) {
+      console.error('Failed to authenticate token:', err.message);
+      return res.status(403).json({ message: 'Failed to authenticate token' });
+    }
     req.userId = decoded.id;
+    req.userRole = decoded.role;
     next();
   });
 };
@@ -23,7 +31,7 @@ const verifyToken = (req, res, next) => {
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
   try {
-    const user = await EmployeeModel.findOne({ email });
+    const user = await UserModel.findOne({ email });
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
@@ -36,23 +44,18 @@ router.post('/login', async (req, res) => {
     const token = jwt.sign({ id: user._id, role: user.role }, secretKey, { expiresIn: '1h' });
     res.json({ message: 'Login successful', token });
   } catch (err) {
-    res.status(500).json({ message: 'Server error', error: err.message });
+    res.status(500).json({ message: 'Server error', err });
   }
 });
 
 // Signup route
 router.post('/signup', async (req, res) => {
   try {
-    const { email, password, username, role } = req.body;
-
-    // Encrypt password
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const user = new EmployeeModel({ email, password: hashedPassword, username, role });
-
+    const user = new UserModel(req.body);
     await user.save();
     res.json({ message: 'User created successfully', user });
   } catch (err) {
-    res.status(500).json({ message: 'Server error', error: err.message });
+    res.status(500).json({ message: 'Server error', err });
   }
 });
 
@@ -64,39 +67,25 @@ router.post('/logout', (req, res) => {
 // Fetch all users route
 router.get('/users', verifyToken, async (req, res) => {
   try {
-    const users = await EmployeeModel.find({}).select('-password'); // Exclude passwords
-    res.json(users);
+    const users = await UserModel.find().select('-password'); // Exclude passwords
+    res.json(users); 
   } catch (error) {
     console.error('Error fetching users:', error);
-    res.status(500).json({ message: 'Failed to fetch users', error: error.message });
+    res.status(500).json({ message: 'Failed to fetch users' });
   }
 });
 
-// Fetch a single user by ID route
-router.get('/user/:id', verifyToken, async (req, res) => {
-  try {
-    const user = await EmployeeModel.findById(req.params.id).select('-password');
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-    res.json(user);
-  } catch (error) {
-    console.error('Error fetching user:', error);
-    res.status(500).json({ message: 'Failed to fetch user', error: error.message });
-  }
-});
-
-// Fetch the logged-in user's data
+// Fetch individual user (authenticated user) route
 router.get('/me', verifyToken, async (req, res) => {
   try {
-    const user = await EmployeeModel.findById(req.userId).select('-password');
+    const user = await UserModel.findById(req.userId).select('-password');
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
-    res.json(user);
+    res.json(user); // Return the user object without the password
   } catch (error) {
     console.error('Error fetching user:', error);
-    res.status(500).json({ message: 'Failed to fetch user', error: error.message });
+    res.status(500).json({ message: 'Failed to fetch user' });
   }
 });
 
