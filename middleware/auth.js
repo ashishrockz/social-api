@@ -1,21 +1,26 @@
 const jwt = require('jsonwebtoken');
-const dotenv = require('dotenv');
+const secretKey = process.env.JWT_SECRET;
 
-dotenv.config();
-const JWT_SECRET = process.env.JWT_SECRET;
-
-// Middleware to verify JWT
 const verifyToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
 
-  if (!token) return res.status(403).json({ message: 'Token required' });
+  if (!token) {
+    console.log('No token provided');
+    return res.status(403).json({ message: 'Please Login' });
+  }
 
-  jwt.verify(token, JWT_SECRET, (err, decoded) => {
-    if (err) return res.status(403).json({ message: 'Invalid token' });
+  jwt.verify(token, secretKey, (err, decoded) => {
+    if (err) {
+      console.error('Failed to authenticate token:', err.message);
+      return res.status(403).json({ message: 'Failed to authenticate token' });
+    }
     req.userId = decoded.id;
+    console.log('Decoded User ID:', req.userId); // Confirm user ID is set
     next();
   });
 };
+
+
 
 module.exports = verifyToken;
